@@ -2,6 +2,7 @@ import subprocess
 import json
 import os
 import logging
+from aspm_cli.utils.docker_pull import docker_pull
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -27,6 +28,7 @@ class IaCScanner:
 
     def run(self):
         """Run the IaC scan using Checkov."""
+        docker_pull(self.checkov_image)
         checkov_cmd = [
             "docker", "run", "--rm", "-v", f"{os.getcwd()}:/workdir", "--workdir", f"/workdir"
         ]
