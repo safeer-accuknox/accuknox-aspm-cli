@@ -1,0 +1,12 @@
+[project]
+name = "aspm-cli"
+version = "0.1.0"
+description = "ASPM CLI Skeleton"
+authors = [{ name = "Your Name", email = "you@example.com" }]
+dependencies = [
+    "pydantic==2.11.4"
+]
+
+
+[project.scripts]
+aspm-cli = "aspm_cli.cli:main"
