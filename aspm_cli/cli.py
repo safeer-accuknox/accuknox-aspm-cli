@@ -2,6 +2,7 @@ import argparse
 import os
 from .utils import ConfigValidator, ALLOWED_SCAN_TYPES, upload_results, handle_failure
 from .scan import IaCScanner
+from .utils.spinner import Spinner
 
 def clean_env_vars():
     """Removes surrounding single or double quotes from all environment variables."""
@@ -9,8 +10,18 @@ def clean_env_vars():
         if value and ((value.startswith("'") and value.endswith("'")) or (value.startswith('"') and value.endswith('"'))):
             os.environ[key] = value[1:-1]
 
+def print_banner():
+    banner = r"""
+    ╔═╗┌─┐┌─┐┬ ┬╦╔═┌┐┌┌─┐─┐ ┬  ╔═╗╔═╗╔═╗╔╦╗  ╔═╗┌─┐┌─┐┌┐┌┌┐┌┌─┐┬─┐
+    ╠═╣│  │  │ │╠╩╗││││ │┌┴┬┘  ╠═╣╚═╗╠═╝║║║  ╚═╗│  ├─┤││││││├┤ ├┬┘
+    ╩ ╩└─┘└─┘└─┘╩ ╩┘└┘└─┘┴ └─  ╩ ╩╚═╝╩  ╩ ╩  ╚═╝└─┘┴ ┴┘└┘┘└┘└─┘┴└─
+    """
+    print(banner)
+
+
 def main():
     clean_env_vars()
+    print_banner()
     parser = argparse.ArgumentParser(prog="aspm-cli", description="ASPM CLI Tool")
     subparsers = parser.add_subparsers(dest="command")
 
@@ -58,17 +69,21 @@ def run_scan(args):
             accuknox_label = os.getenv("ACCUKNOX_LABEL")
             accuknox_token = os.getenv("ACCUKNOX_TOKEN")
             ConfigValidatorObj = ConfigValidator(args.scantype.lower(), accuknox_endpoint, accuknox_tenant, accuknox_label, accuknox_token, softfail)
-            print(f"✅ Running {args.scantype.lower()} scan...")
+
 
             if args.scantype.lower() == "iac":
+                spinner = Spinner(f"Running {args.scantype.lower()} scan...")
+                spinner.start()
                 ConfigValidatorObj.validate_iac_scan(args.repo_url, args.repo_branch, args.file, args.directory, args.compact, args.quiet, args.framework)
                 IaCScannerObj = IaCScanner(args.repo_url, args.repo_branch, args.file, args.directory, args.compact, args.quiet, args.framework)
                 exit_code, result_file = IaCScannerObj.run()
-
+                spinner.stop()
+    
                 if(result_file):
                     upload_results(result_file, accuknox_endpoint, accuknox_tenant, accuknox_label, accuknox_token, "IAC")
                 handle_failure(exit_code, softfail)
-                pass 
+                pass
+
         else:
             print("❌ Invalid scan type.")
     except Exception as e:

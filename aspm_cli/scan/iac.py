@@ -2,7 +2,7 @@ import subprocess
 import json
 import os
 import logging
-from aspm_cli.utils.docker_pull import docker_pull
+from aspm_cli.utils import docker_pull
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

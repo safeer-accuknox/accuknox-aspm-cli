@@ -2,6 +2,7 @@ import requests
 import urllib3
 import logging
 import os
+from aspm_cli.utils.spinner import Spinner
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -13,6 +14,10 @@ if debug_mode:
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 def upload_results(result_file, endpoint, tenant_id, label, token, data_type):
+
+    spinner = Spinner(f"Uploading the result to AccuKnox...")
+    spinner.start()
+
     """Upload the result JSON to the specified endpoint."""
     logger.info("Uploading results...")
     try:
@@ -37,3 +42,5 @@ def upload_results(result_file, endpoint, tenant_id, label, token, data_type):
     except Exception as e:
         logger.error(f"Error uploading results: {e}")
         raise
+    finally:
+        spinner.stop()
