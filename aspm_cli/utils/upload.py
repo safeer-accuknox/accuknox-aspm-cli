@@ -1,14 +1,9 @@
 import requests
 import urllib3
-import logging
 import os
 from aspm_cli.utils.spinner import Spinner
 from colorama import Fore
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-debug_mode = os.getenv('DEBUG', 'FALSE').upper() == 'TRUE'
-if debug_mode:
-    logging.getLogger().setLevel(logging.DEBUG)
+from aspm_cli.utils.logger import Logger
 
 # Suppress SSL warnings
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -19,7 +14,7 @@ def upload_results(result_file, endpoint, tenant_id, label, token, data_type):
     spinner.start()
 
     """Upload the result JSON to the specified endpoint."""
-    logger.info("Uploading results...")
+    Logger.get_logger().info("Uploading results...")
     try:
         with open(result_file, 'rb') as file:
             response = requests.post(
@@ -38,9 +33,9 @@ def upload_results(result_file, endpoint, tenant_id, label, token, data_type):
                 verify=False  # Bypass SSL verification
             )
         response.raise_for_status()
-        logger.info(f"Upload successful. Response: {response.status_code}")
+        Logger.get_logger().info(f"Upload successful. Response: {response.status_code}")
     except Exception as e:
-        logger.error(f"Error uploading results: {e}")
+        Logger.get_logger().error(f"Error uploading results: {e}")
         raise
     finally:
         spinner.stop()

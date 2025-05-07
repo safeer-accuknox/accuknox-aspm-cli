@@ -1,15 +1,9 @@
 import subprocess
 import json
 import os
-import logging
 from aspm_cli.utils import docker_pull
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-debug_mode = os.getenv('DEBUG', 'FALSE').upper() == 'TRUE'
-if debug_mode:
-    logging.getLogger().setLevel(logging.DEBUG)
-
+from aspm_cli.utils.logger import Logger
 
 class IaCScanner:
     checkov_image = "ghcr.io/bridgecrewio/checkov:3.2.21"
@@ -50,19 +44,19 @@ class IaCScanner:
         if self.framework:
             checkov_cmd.extend(["--framework", self.framework])
 
-        logger.debug(f"Executing command: {' '.join(checkov_cmd)}")
+        Logger.get_logger().debug(f"Executing command: {' '.join(checkov_cmd)}")
         result = subprocess.run(checkov_cmd, capture_output=True, text=True)
 
         if(result.stdout):
-            logger.debug(result.stdout)
+            Logger.get_logger().debug(result.stdout)
         if(result.stderr):
-            logger.error(result.stderr)
+            Logger.get_logger().error(result.stderr)
 
         checkov_cmd_init.extend(["-c", f"chmod 777 {self.result_file}"])
         subprocess.run(checkov_cmd_init, capture_output=True, text=True)
 
         if not os.path.exists(self.result_file):
-            logger.info("No results found. Skipping API upload.")
+            Logger.get_logger().info("No results found. Skipping API upload.")
             return result.returncode, None
 
         self.process_result_file()
@@ -87,7 +81,7 @@ class IaCScanner:
             with open(self.result_file, 'w') as file:
                 json.dump(data, file, indent=2)
 
-            logger.debug("Result file processed successfully.")
+            Logger.get_logger().debug("Result file processed successfully.")
         except Exception as e:
-            logger.error(f"Error processing result file: {e}")
+            Logger.get_logger().error(f"Error processing result file: {e}")
             raise

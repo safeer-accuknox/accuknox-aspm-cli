@@ -1,13 +1,8 @@
 from pydantic import BaseModel, ValidationError, Field, field_validator, root_validator
 import os
-import logging
 from typing import Optional
+from aspm_cli.utils.logger import Logger
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-debug_mode = os.getenv('DEBUG', 'FALSE').upper() == 'TRUE'
-if debug_mode:
-    logging.getLogger().setLevel(logging.DEBUG)
 
 ALLOWED_SCAN_TYPES = {"iac", "secret"}
 
@@ -107,7 +102,7 @@ class ConfigValidator:
             )
         except ValidationError as e:
             for error in e.errors():
-                logger.error(f"{error['loc'][0]}: {error['msg']}")
+                Logger.get_logger().error(f"{error['loc'][0]}: {error['msg']}")
             exit(1)
 
     def validate_iac_scan(self, repo_url, repo_branch, input_file, input_directory, input_compact, input_quiet, input_framework):
@@ -123,7 +118,7 @@ class ConfigValidator:
             )
         except ValidationError as e:
             for error in e.errors():
-                logger.error(f"{error['loc'][0]}: {error['msg']}")
+                Logger.get_logger().error(f"{error['loc'][0]}: {error['msg']}")
             exit(1)
 
     def validate_secret_scan(self, results, branch, exclude_paths, additional_arguments):
@@ -136,7 +131,7 @@ class ConfigValidator:
             )
         except ValidationError as e:
             for error in e.errors():
-                logger.error(f"{error['loc'][0]}: {error['msg']}")
+                Logger.get_logger().error(f"{error['loc'][0]}: {error['msg']}")
             exit(1)
 
     def validate_cx_scan(self, scan_id, project_name, branch, client_id, client_secret, base_uri, tenant, source_dir, repo_url, repo_branch, repo_commit_sha, repo_commit_ref):
@@ -159,5 +154,5 @@ class ConfigValidator:
             errors = e.errors()
             for error in errors:
                 location = " -> ".join(str(loc) for loc in error.get("loc", []))
-                logger.error(f"{location if location else 'Validation Error'}: {error['msg']}")
+                Logger.get_logger().error(f"{location if location else 'Validation Error'}: {error['msg']}")
             exit(1)

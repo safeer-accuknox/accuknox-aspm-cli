@@ -6,12 +6,7 @@ from .utils import ConfigValidator, ALLOWED_SCAN_TYPES, upload_results, handle_f
 from .scan import IaCScanner
 from .utils.spinner import Spinner
 
-import logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-debug_mode = os.getenv('DEBUG', 'FALSE').upper() == 'TRUE'
-if debug_mode:
-    logging.getLogger().setLevel(logging.DEBUG)
+from .utils.logger import Logger
 
 
 def clean_env_vars():
@@ -62,11 +57,11 @@ def main():
 
 def print_env(args):
     try:
-        logging.info(f"ACCUKNOX_ENDPOINT={os.getenv('ACCUKNOX_ENDPOINT')}")
-        logging.info(f"ACCUKNOX_TENANT={os.getenv('ACCUKNOX_TENANT')}")
-        logging.info(f"ACCUKNOX_LABEL={os.getenv('ACCUKNOX_LABEL')}")
+        Logger.get_logger().info(f"ACCUKNOX_ENDPOINT={os.getenv('ACCUKNOX_ENDPOINT')}")
+        Logger.get_logger().info(f"ACCUKNOX_TENANT={os.getenv('ACCUKNOX_TENANT')}")
+        Logger.get_logger().info(f"ACCUKNOX_LABEL={os.getenv('ACCUKNOX_LABEL')}")
     except Exception as e:
-        logging.error(e)
+        Logger.get_logger().error(e)
 
 def run_scan(args):
     try:
@@ -93,7 +88,7 @@ def run_scan(args):
                 handle_failure(exit_code, softfail)
                 pass
         else:
-            logging.error("Invalid scan type.")
+            Logger.get_logger().error("Invalid scan type.")
     except Exception as e:
-        logging.error("Scan failed.")
-        logging.error(e)
+        Logger.get_logger().error("Scan failed.")
+        Logger.get_logger().error(e)
