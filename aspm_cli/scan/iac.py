@@ -57,7 +57,7 @@ class IaCScanner:
             logger.error(result.stderr)
 
         checkov_cmd_init.extend(["-c", f"chmod 777 {self.result_file}"])
-        result = subprocess.run(checkov_cmd_init, capture_output=True, text=True)
+        subprocess.run(checkov_cmd_init, capture_output=True, text=True)
 
         if not os.path.exists(self.result_file):
             logger.info("No results found. Skipping API upload.")

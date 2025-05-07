@@ -1,6 +1,6 @@
 import argparse
 import os
-from .utils import ConfigValidator, ALLOWED_SCAN_TYPES
+from .utils import ConfigValidator, ALLOWED_SCAN_TYPES, upload_results, handle_failure
 from .scan import IaCScanner
 
 def clean_env_vars():
@@ -13,6 +13,8 @@ def main():
     clean_env_vars()
     parser = argparse.ArgumentParser(prog="aspm-cli", description="ASPM CLI Tool")
     subparsers = parser.add_subparsers(dest="command")
+
+    parser.add_argument('--softfail', action='store_true', help='Enable soft fail mode for scanning')
 
     env_parser = subparsers.add_parser("env", help="Validate and print config from environment")
     env_parser.set_defaults(func=print_env)
@@ -38,7 +40,7 @@ def main():
     else:
         parser.print_help()
 
-def print_env():
+def print_env(args):
     try:
         print(f"ACCUKNOX_ENDPOINT={os.getenv('ACCUKNOX_ENDPOINT')}")
         print(f"ACCUKNOX_TENANT={os.getenv('ACCUKNOX_TENANT')}")
@@ -50,14 +52,22 @@ def run_scan(args):
     try:
         # Determine the scan type from subcommand
         if args.scantype:
-            input_soft_fail = True
-            ConfigValidatorObj = ConfigValidator(args.scantype.lower(), os.getenv("ACCUKNOX_ENDPOINT"), os.getenv("ACCUKNOX_TENANT"), os.getenv("ACCUKNOX_LABEL"), os.getenv("ACCUKNOX_TOKEN"), input_soft_fail)
+            softfail = args.softfail
+            accuknox_endpoint = os.getenv("ACCUKNOX_ENDPOINT")
+            accuknox_tenant = os.getenv("ACCUKNOX_TENANT")
+            accuknox_label = os.getenv("ACCUKNOX_LABEL")
+            accuknox_token = os.getenv("ACCUKNOX_TOKEN")
+            ConfigValidatorObj = ConfigValidator(args.scantype.lower(), accuknox_endpoint, accuknox_tenant, accuknox_label, accuknox_token, softfail)
             print(f"✅ Running {args.scantype.lower()} scan...")
 
             if args.scantype.lower() == "iac":
                 ConfigValidatorObj.validate_iac_scan(args.repo_url, args.repo_branch, args.file, args.directory, args.compact, args.quiet, args.framework)
                 IaCScannerObj = IaCScanner(args.repo_url, args.repo_branch, args.file, args.directory, args.compact, args.quiet, args.framework)
                 exit_code, result_file = IaCScannerObj.run()
+
+                if(result_file):
+                    upload_results(result_file, accuknox_endpoint, accuknox_tenant, accuknox_label, accuknox_token, "IAC")
+                handle_failure(exit_code, softfail)
                 pass 
         else:
             print("❌ Invalid scan type.")
