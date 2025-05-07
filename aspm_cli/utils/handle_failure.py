@@ -1,5 +1,5 @@
 import os
-
+from colorama import Fore
 from aspm_cli.utils.logger import Logger
 
 def handle_failure(exit_code, soft_fail):
@@ -11,4 +11,4 @@ def handle_failure(exit_code, soft_fail):
             Logger.get_logger().error("Vulnerabilities detected and soft fail is disabled. Exiting with failure.")
             exit(1)
     else:
-        Logger.get_logger().info("Scan completed successfully.")
+        Logger.log_with_color('INFO', "Scan completed successfully.", Fore.GREEN)
