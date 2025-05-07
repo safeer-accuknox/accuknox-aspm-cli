@@ -3,9 +3,11 @@ import os
 import logging
 from typing import Optional
 
-
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+debug_mode = os.getenv('DEBUG', 'FALSE').upper() == 'TRUE'
+if debug_mode:
+    logging.getLogger().setLevel(logging.DEBUG)
 
 ALLOWED_SCAN_TYPES = {"iac", "secret"}
 

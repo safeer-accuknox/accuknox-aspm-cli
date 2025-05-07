@@ -3,7 +3,7 @@ import urllib3
 import logging
 import os
 from aspm_cli.utils.spinner import Spinner
-
+from colorama import Fore
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 debug_mode = os.getenv('DEBUG', 'FALSE').upper() == 'TRUE'
@@ -15,7 +15,7 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 def upload_results(result_file, endpoint, tenant_id, label, token, data_type):
 
-    spinner = Spinner(f"Uploading the result to AccuKnox...")
+    spinner = Spinner(message=f"Uploading the result to AccuKnox...",  color=Fore.GREEN)
     spinner.start()
 
     """Upload the result JSON to the specified endpoint."""

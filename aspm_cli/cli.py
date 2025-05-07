@@ -1,8 +1,18 @@
 import argparse
 import os
+from colorama import Fore, Back, Style, init
+init(autoreset=True)
 from .utils import ConfigValidator, ALLOWED_SCAN_TYPES, upload_results, handle_failure
 from .scan import IaCScanner
 from .utils.spinner import Spinner
+
+import logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+debug_mode = os.getenv('DEBUG', 'FALSE').upper() == 'TRUE'
+if debug_mode:
+    logging.getLogger().setLevel(logging.DEBUG)
+
 
 def clean_env_vars():
     """Removes surrounding single or double quotes from all environment variables."""
@@ -16,8 +26,7 @@ def print_banner():
     ╠═╣│  │  │ │╠╩╗││││ │┌┴┬┘  ╠═╣╚═╗╠═╝║║║  ╚═╗│  ├─┤││││││├┤ ├┬┘
     ╩ ╩└─┘└─┘└─┘╩ ╩┘└┘└─┘┴ └─  ╩ ╩╚═╝╩  ╩ ╩  ╚═╝└─┘┴ ┴┘└┘┘└┘└─┘┴└─
     """
-    print(banner)
-
+    print(Fore.BLUE + banner)
 
 def main():
     clean_env_vars()
@@ -53,11 +62,11 @@ def main():
 
 def print_env(args):
     try:
-        print(f"ACCUKNOX_ENDPOINT={os.getenv('ACCUKNOX_ENDPOINT')}")
-        print(f"ACCUKNOX_TENANT={os.getenv('ACCUKNOX_TENANT')}")
-        print(f"ACCUKNOX_LABEL={os.getenv('ACCUKNOX_LABEL')}")
+        logging.info(f"ACCUKNOX_ENDPOINT={os.getenv('ACCUKNOX_ENDPOINT')}")
+        logging.info(f"ACCUKNOX_TENANT={os.getenv('ACCUKNOX_TENANT')}")
+        logging.info(f"ACCUKNOX_LABEL={os.getenv('ACCUKNOX_LABEL')}")
     except Exception as e:
-        print(e)
+        logging.error(e)
 
 def run_scan(args):
     try:
@@ -72,7 +81,7 @@ def run_scan(args):
 
 
             if args.scantype.lower() == "iac":
-                spinner = Spinner(f"Running {args.scantype.lower()} scan...")
+                spinner = Spinner(message=f"Running {args.scantype.lower()} scan...",  color=Fore.GREEN)
                 spinner.start()
                 ConfigValidatorObj.validate_iac_scan(args.repo_url, args.repo_branch, args.file, args.directory, args.compact, args.quiet, args.framework)
                 IaCScannerObj = IaCScanner(args.repo_url, args.repo_branch, args.file, args.directory, args.compact, args.quiet, args.framework)
@@ -83,9 +92,8 @@ def run_scan(args):
                     upload_results(result_file, accuknox_endpoint, accuknox_tenant, accuknox_label, accuknox_token, "IAC")
                 handle_failure(exit_code, softfail)
                 pass
-
         else:
-            print("❌ Invalid scan type.")
+            logging.error("Invalid scan type.")
     except Exception as e:
-        print("❌ Scan failed:")
-        print(e)
+        logging.error("Scan failed.")
+        logging.error(e)
