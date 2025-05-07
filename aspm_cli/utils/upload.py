@@ -13,7 +13,6 @@ if debug_mode:
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 def upload_results(result_file, endpoint, tenant_id, label, token, data_type):
-    print(result_file, endpoint, tenant_id, label, token, data_type)
     """Upload the result JSON to the specified endpoint."""
     logger.info("Uploading results...")
     try:
