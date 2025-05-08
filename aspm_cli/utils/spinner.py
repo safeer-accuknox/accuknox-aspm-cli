@@ -3,6 +3,7 @@ import threading
 import itertools
 import time
 from colorama import Fore, init
+import os
 init(autoreset=True)
 
 class Spinner:
@@ -17,7 +18,10 @@ class Spinner:
         while not self.stop_running:
             sys.stdout.write(f"\r{self.color}{self.message} {next(self.spinner)}")
             sys.stdout.flush()
-            time.sleep(0.1)
+            if os.getenv("GITHUB_ACTIONS") == "true":
+                time.sleep(10)
+            else:
+                time.sleep(0.1)
         sys.stdout.write("\r" + " " * (len(self.message) + 2) + "\r")
 
     def start(self):
