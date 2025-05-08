@@ -86,7 +86,6 @@ def run_scan(args):
                 if(result_file):
                     upload_results(result_file, accuknox_endpoint, accuknox_tenant, accuknox_label, accuknox_token, "IAC")
                 handle_failure(exit_code, softfail)
-                pass
         else:
             Logger.get_logger().error("Invalid scan type.")
     except Exception as e:

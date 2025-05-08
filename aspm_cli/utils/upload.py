@@ -14,7 +14,7 @@ def upload_results(result_file, endpoint, tenant_id, label, token, data_type):
     spinner.start()
 
     """Upload the result JSON to the specified endpoint."""
-    Logger.get_logger().info("Uploading results...")
+    Logger.get_logger().debug("Uploading results...")
     try:
         with open(result_file, 'rb') as file:
             response = requests.post(
