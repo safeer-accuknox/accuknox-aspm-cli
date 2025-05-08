@@ -1,12 +1,12 @@
 [project]
-name = "aspm-cli"
+name = "accuknox-aspm-scanner"
 version = "0.1.0"
-description = "ASPM CLI Skeleton"
-authors = [{ name = "Your Name", email = "you@example.com" }]
+description = "AccuKnox ASPM Scanner"
+authors = [{ name = "AccuKnox", email = "accuknox@accuknox.com" }]
 dependencies = [
-    "pydantic==2.11.4"
+    "pydantic==2.11.4",
+    "colorama==0.4.6"
 ]
 
-
 [project.scripts]
-aspm-cli = "aspm_cli.cli:main"
+accuknox-aspm-scanner = "aspm_cli.cli:main"
