@@ -21,46 +21,50 @@ class IaCScanner:
         self.repo_branch = repo_branch
 
     def run(self):
-        """Run the IaC scan using Checkov."""
-        docker_pull(self.checkov_image)
-        checkov_cmd = [
-            "docker", "run", "--rm", "-v", f"{os.getcwd()}:/workdir", "--workdir", f"/workdir"
-        ]
-        checkov_cmd_init = list(checkov_cmd)
-        checkov_cmd_init.extend(["--entrypoint", "bash"])
+        try:
+            """Run the IaC scan using Checkov."""
+            docker_pull(self.checkov_image)
+            checkov_cmd = [
+                "docker", "run", "--rm", "-v", f"{os.getcwd()}:/workdir", "--workdir", f"/workdir"
+            ]
+            checkov_cmd_init = list(checkov_cmd)
+            checkov_cmd_init.extend(["--entrypoint", "bash"])
 
-        checkov_cmd.append(self.checkov_image)
-        checkov_cmd_init.append(self.checkov_image)
+            checkov_cmd.append(self.checkov_image)
+            checkov_cmd_init.append(self.checkov_image)
 
-        if self.file:
-            checkov_cmd.extend(["-f", self.file])
-        if self.directory:
-            checkov_cmd.extend(["-d", self.directory])
-        if self.compact is True:
-            checkov_cmd.append("--compact")
-        if self.quiet is True:
-            checkov_cmd.append("--quiet")
-        checkov_cmd.extend(["-o", self.output_format, "--output-file-path", self.output_file_path])
-        if self.framework:
-            checkov_cmd.extend(["--framework", self.framework])
+            if self.file:
+                checkov_cmd.extend(["-f", self.file])
+            if self.directory:
+                checkov_cmd.extend(["-d", self.directory])
+            if self.compact is True:
+                checkov_cmd.append("--compact")
+            if self.quiet is True:
+                checkov_cmd.append("--quiet")
+            checkov_cmd.extend(["-o", self.output_format, "--output-file-path", self.output_file_path])
+            if self.framework:
+                checkov_cmd.extend(["--framework", self.framework])
 
-        Logger.get_logger().debug(f"Executing command: {' '.join(checkov_cmd)}")
-        result = subprocess.run(checkov_cmd, capture_output=True, text=True)
+            Logger.get_logger().debug(f"Executing command: {' '.join(checkov_cmd)}")
+            result = subprocess.run(checkov_cmd, capture_output=True, text=True)
 
-        if(result.stdout):
-            Logger.get_logger().debug(result.stdout)
-        if(result.stderr):
-            Logger.get_logger().error(result.stderr)
+            if(result.stdout):
+                Logger.get_logger().debug(result.stdout)
+            if(result.stderr):
+                Logger.get_logger().error(result.stderr)
 
-        checkov_cmd_init.extend(["-c", f"chmod 777 {self.result_file}"])
-        subprocess.run(checkov_cmd_init, capture_output=True, text=True)
+            checkov_cmd_init.extend(["-c", f"chmod 777 {self.result_file}"])
+            subprocess.run(checkov_cmd_init, capture_output=True, text=True)
 
-        if not os.path.exists(self.result_file):
-            Logger.get_logger().info("No results found. Skipping API upload.")
-            return result.returncode, None
+            if not os.path.exists(self.result_file):
+                Logger.get_logger().info("No results found. Skipping API upload.")
+                return result.returncode, None
 
-        self.process_result_file()
-        return result.returncode, self.result_file
+            self.process_result_file()
+            return result.returncode, self.result_file
+        except Exception as e:
+            Logger.get_logger().error(f"Error during IAC scan: {e}")
+            raise
 
     def process_result_file(self):
         """Process the result JSON file to ensure it is an array and append additional metadata."""
@@ -83,5 +87,6 @@ class IaCScanner:
 
             Logger.get_logger().debug("Result file processed successfully.")
         except Exception as e:
-            Logger.get_logger().error(f"Error processing result file: {e}")
+            Logger.get_logger().debug(f"Error processing result file: {e}")
+            Logger.get_logger().error(f"Error during IAC scan: {e}")
             raise

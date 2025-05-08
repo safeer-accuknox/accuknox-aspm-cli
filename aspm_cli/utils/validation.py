@@ -4,7 +4,7 @@ from typing import Optional
 from aspm_cli.utils.logger import Logger
 
 
-ALLOWED_SCAN_TYPES = {"iac", "secret"}
+ALLOWED_SCAN_TYPES = {"iac", "sast"}
 
 class Config(BaseModel):
     SCAN_TYPE: str
@@ -44,6 +44,29 @@ class IaCScannerConfig(BaseModel):
     def validate_repository_branch(cls, v):
         if not isinstance(v, str) or not v.strip():
             raise ValueError("Unable to retrieve REPOSITORY_BRANCH from Git metadata. Please pass the --repo-branch variable")
+        return v
+
+class SASTScannerConfig(BaseModel):
+    REPOSITORY_URL: str
+    COMMIT_REF: str
+    COMMIT_SHA: Optional[str]
+    PIPELINE_ID: Optional[str] 
+    JOB_URL: Optional[str]
+
+    @field_validator("REPOSITORY_URL", mode="before")
+    @classmethod
+    def validate_repository_url(cls, v):
+        if not v:
+            raise ValueError("Unable to retrieve REPOSITORY_URL from Git metadata. Please pass the --repo-url variable.")
+        if not isinstance(v, str) or not v.startswith("http"):
+            raise ValueError("Invalid REPOSITORY_URL. It must be a valid URL starting with 'http'.")
+        return v
+
+    @field_validator("COMMIT_REF", mode="before")
+    @classmethod
+    def validate_commit_ref(cls, v):
+        if not isinstance(v, str) or not v.strip():
+            raise ValueError("Unable to retrieve COMMIT_REF from Git metadata. Please pass the --commit-ref variable")
         return v
 
 class SecretScannerConfig(BaseModel):
@@ -120,6 +143,21 @@ class ConfigValidator:
             for error in e.errors():
                 Logger.get_logger().error(f"{error['loc'][0]}: {error['msg']}")
             exit(1)
+
+    def validate_sast_scan(self, repo_url, commit_ref, commit_sha, pipeline_id, job_url):
+        try:
+            self.config = SASTScannerConfig(
+                REPOSITORY_URL=repo_url,
+                COMMIT_REF=commit_ref,
+                COMMIT_SHA=commit_sha,
+                PIPELINE_ID=pipeline_id,
+                JOB_URL=job_url
+            )
+        except ValidationError as e:
+            for error in e.errors():
+                Logger.get_logger().error(f"{error['loc'][0]}: {error['msg']}")
+            exit(1)
+
 
     def validate_secret_scan(self, results, branch, exclude_paths, additional_arguments):
         try:

@@ -1,6 +1,8 @@
 import argparse
 import os
 from colorama import Fore, Back, Style, init
+
+from aspm_cli.scan.sast import SASTScanner
 init(autoreset=True)
 from .utils import ConfigValidator, ALLOWED_SCAN_TYPES, upload_results, handle_failure
 from .scan import IaCScanner
@@ -48,6 +50,15 @@ def main():
     iac_parser.add_argument("--repo-branch", help="GitHub repository branch")
     iac_parser.set_defaults(func=run_scan)
 
+    # SAST Scan Subcommand
+    sast_parser = scan_subparsers.add_parser("sast", help="Run SAST scan")
+    sast_parser.add_argument("--repo-url", help="Specify a file for scanning; cannot be used with directory input")
+    sast_parser.add_argument("--commit-ref", help="Directory with infrastructure code and/or package manager files to scan")
+    sast_parser.add_argument("--commit-sha", help="Do not display code blocks in output")
+    sast_parser.add_argument("--pipeline-id", help="Display only failed checks")
+    sast_parser.add_argument("--job-url", help="Filter scans by specific frameworks, e.g., --framework terraform,sca_package. For all frameworks, use --framework all")
+    sast_parser.set_defaults(func=run_scan)
+
     # Parse arguments and execute respective function
     args = parser.parse_args()
     if hasattr(args, 'func'):
@@ -76,15 +87,28 @@ def run_scan(args):
 
 
             if args.scantype.lower() == "iac":
+                ConfigValidatorObj.validate_iac_scan(args.repo_url, args.repo_branch, args.file, args.directory, args.compact, args.quiet, args.framework)
                 spinner = Spinner(message=f"Running {args.scantype.lower()} scan...",  color=Fore.GREEN)
                 spinner.start()
-                ConfigValidatorObj.validate_iac_scan(args.repo_url, args.repo_branch, args.file, args.directory, args.compact, args.quiet, args.framework)
                 IaCScannerObj = IaCScanner(args.repo_url, args.repo_branch, args.file, args.directory, args.compact, args.quiet, args.framework)
                 exit_code, result_file = IaCScannerObj.run()
                 spinner.stop()
     
                 if(result_file):
                     upload_results(result_file, accuknox_endpoint, accuknox_tenant, accuknox_label, accuknox_token, "IAC")
+                handle_failure(exit_code, softfail)
+            if args.scantype.lower() == "sast":
+                ConfigValidatorObj.validate_sast_scan(args.repo_url, args.commit_ref, args.commit_sha, args.pipeline_id, args.job_url)
+                spinner = Spinner(message=f"Running {args.scantype.lower()} scan...",  color=Fore.GREEN)
+                spinner.start()
+                SASTScannerObj = SASTScanner(args.repo_url, args.commit_ref, args.commit_sha, args.pipeline_id, args.job_url)
+                exit_code, result_file = SASTScannerObj.run()
+                spinner.stop()
+
+                print("TEST")
+    
+                if(result_file):
+                    upload_results(result_file, accuknox_endpoint, accuknox_tenant, accuknox_label, accuknox_token, "SG")
                 handle_failure(exit_code, softfail)
         else:
             Logger.get_logger().error("Invalid scan type.")
