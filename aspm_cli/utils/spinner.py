@@ -4,6 +4,7 @@ import itertools
 import time
 from colorama import Fore, init
 import os
+
 init(autoreset=True)
 
 class Spinner:
@@ -15,13 +16,18 @@ class Spinner:
         self.thread = threading.Thread(target=self._spin)
 
     def _spin(self):
+        last_update = time.time()  # Track last update time
         while not self.stop_running:
-            sys.stdout.write(f"\r{self.color}{self.message} {next(self.spinner)}")
-            sys.stdout.flush()
+            # Print spinner updates every 10 seconds if in GitHub Actions, else every 0.1s
             if os.getenv("GITHUB_ACTIONS") == "true":
-                time.sleep(10)
+                if time.time() - last_update >= 10:
+                    sys.stdout.write(f"\r{self.color}{self.message} {next(self.spinner)}")
+                    sys.stdout.flush()
+                    last_update = time.time()
             else:
-                time.sleep(0.1)
+                sys.stdout.write(f"\r{self.color}{self.message} {next(self.spinner)}")
+                sys.stdout.flush()
+                time.sleep(0.1)  # Faster updates in other environments
         sys.stdout.write("\r" + " " * (len(self.message) + 2) + "\r")
 
     def start(self):
