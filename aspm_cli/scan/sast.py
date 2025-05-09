@@ -21,8 +21,6 @@ class SASTScanner:
             docker_pull(self.opengrep_image)
             Logger.get_logger().debug("Starting OpenGrep scan...")
 
-            exit_code = self.run_opengrep_scan()
-
             cmd = [
                 "docker", "run", "--rm",
                 "-v", f"{os.getcwd()}:/app",

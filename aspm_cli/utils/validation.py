@@ -113,7 +113,7 @@ class CxcannerConfig(BaseModel):
 
 
 class ConfigValidator:
-    def __init__(self, scan_type, accuknox_endpoint, accuknox_tenant, accuknox_label, accuknox_token, input_soft_fail):
+    def __init__(self, scan_type, accuknox_endpoint, accuknox_tenant, accuknox_label, accuknox_token, softfail):
         try:
             self.config = Config(
                 SCAN_TYPE=scan_type,
@@ -121,7 +121,7 @@ class ConfigValidator:
                 ACCUKNOX_TENANT=accuknox_tenant,
                 ACCUKNOX_LABEL=accuknox_label,
                 ACCUKNOX_TOKEN=accuknox_token,
-                SOFT_FAIL=input_soft_fail
+                SOFT_FAIL=softfail
             )
         except ValidationError as e:
             for error in e.errors():
