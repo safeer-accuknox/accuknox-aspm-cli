@@ -81,12 +81,12 @@ def add_iac_scan_args(parser):
     parser.add_argument("--compact", action="store_true", help="Do not display code blocks in output")
     parser.add_argument("--quiet", action="store_true", help="Display only failed checks")
     parser.add_argument("--framework", default="all", help="Filter scans by specific frameworks, e.g., --framework terraform,sca_package. For all frameworks, use --framework all")
-    parser.add_argument("--repo-url", default=GitInfo.get_repo_url(), help="GitHub repository URL")
-    parser.add_argument("--repo-branch", default=GitInfo.get_branch_name(), help="GitHub repository branch")
+    parser.add_argument("--repo-url", default=GitInfo.get_repo_url(), help="Git repository URL")
+    parser.add_argument("--repo-branch", default=GitInfo.get_branch_name(), help="Git repository branch")
 
 def add_sast_scan_args(parser):
     """Add arguments specific to SAST scan."""
-    parser.add_argument("--repo-url", default=GitInfo.get_repo_url(), help="GitHub repository URL")
+    parser.add_argument("--repo-url", default=GitInfo.get_repo_url(), help="Git repository URL")
     parser.add_argument("--commit-ref", default=GitInfo.get_commit_ref(), help="Commit reference for scanning")
     parser.add_argument("--commit-sha", default=GitInfo.get_commit_sha(), help="Commit SHA for scanning")
     parser.add_argument("--pipeline-id", help="Pipeline ID for scanning")

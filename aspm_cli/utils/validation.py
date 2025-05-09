@@ -49,7 +49,7 @@ class IaCScannerConfig(BaseModel):
 class SASTScannerConfig(BaseModel):
     REPOSITORY_URL: str
     COMMIT_REF: str
-    COMMIT_SHA: Optional[str]
+    COMMIT_SHA: str
     PIPELINE_ID: Optional[str] 
     JOB_URL: Optional[str]
 
@@ -67,6 +67,13 @@ class SASTScannerConfig(BaseModel):
     def validate_commit_ref(cls, v):
         if not isinstance(v, str) or not v.strip():
             raise ValueError("Unable to retrieve COMMIT_REF from Git metadata. Please pass the --commit-ref variable")
+        return v
+    
+    @field_validator("COMMIT_SHA", mode="before")
+    @classmethod
+    def validate_commit_sha(cls, v):
+        if not isinstance(v, str) or not v.strip():
+            raise ValueError("Unable to retrieve COMMIT_SHA from Git metadata. Please pass the --commit-sha variable")
         return v
 
 class SecretScannerConfig(BaseModel):
