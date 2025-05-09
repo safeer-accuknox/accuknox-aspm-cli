@@ -3,6 +3,7 @@ import os
 from colorama import Fore, init
 
 from aspm_cli.scan.sast import SASTScanner
+from aspm_cli.utils.git import GitInfo
 from .utils import ConfigValidator, ALLOWED_SCAN_TYPES, upload_results, handle_failure
 from .scan import IaCScanner
 from .utils.spinner import Spinner
@@ -80,16 +81,16 @@ def add_iac_scan_args(parser):
     parser.add_argument("--compact", action="store_true", help="Do not display code blocks in output")
     parser.add_argument("--quiet", action="store_true", help="Display only failed checks")
     parser.add_argument("--framework", default="all", help="Filter scans by specific frameworks, e.g., --framework terraform,sca_package. For all frameworks, use --framework all")
-    parser.add_argument("--repo-url", help="GitHub repository URL")
-    parser.add_argument("--repo-branch", help="GitHub repository branch")
+    parser.add_argument("--repo-url", default=GitInfo.get_repo_url(), help="GitHub repository URL")
+    parser.add_argument("--repo-branch", default=GitInfo.get_branch_name(), help="GitHub repository branch")
 
 def add_sast_scan_args(parser):
     """Add arguments specific to SAST scan."""
-    parser.add_argument("--commit-ref", help="Commit reference for scanning")
-    parser.add_argument("--commit-sha", help="Commit SHA for scanning")
+    parser.add_argument("--repo-url", default=GitInfo.get_repo_url(), help="GitHub repository URL")
+    parser.add_argument("--commit-ref", default=GitInfo.get_commit_ref(), help="Commit reference for scanning")
+    parser.add_argument("--commit-sha", default=GitInfo.get_commit_sha(), help="Commit SHA for scanning")
     parser.add_argument("--pipeline-id", help="Pipeline ID for scanning")
     parser.add_argument("--job-url", help="Job URL for scanning")
-    parser.add_argument("--repo-url", help="GitHub repository URL")
 
 def main():
     clean_env_vars()
