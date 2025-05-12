@@ -4,7 +4,7 @@ from typing import Optional
 from aspm_cli.utils.logger import Logger
 
 
-ALLOWED_SCAN_TYPES = {"iac", "sast"}
+ALLOWED_SCAN_TYPES = {"iac", "sast", "sq-sast"}
 
 class Config(BaseModel):
     SCAN_TYPE: str
@@ -75,49 +75,39 @@ class SASTScannerConfig(BaseModel):
         if not isinstance(v, str) or not v.strip():
             raise ValueError("Unable to retrieve COMMIT_SHA from Git metadata. Please pass the --commit-sha variable")
         return v
-
-class SecretScannerConfig(BaseModel):
-    RESULTS: Optional[str]
-    BRANCH: Optional[str]
-    EXCLUDE_PATHS: Optional[str]
-    ADDITIONAL_ARGUMENTS: Optional[str]
-
-class CxcannerConfig(BaseModel):
-    CX_PROJECT_NAME: Optional[str] = None  
-    CX_BRANCH: Optional[str] = None  
-    CX_SCAN_ID: Optional[str] = None  
-    CX_CLIENT_ID: str
-    CX_CLIENT_SECRET: str
-    CX_BASE_URI: str
-    CX_TENANT: str
-    INPUT_DIRECTORY: str
+    
+class SQSASTScannerConfig(BaseModel):
+    SONAR_PROJECT_KEY: str
+    SONAR_TOKEN: str
+    SONAR_HOST_URL: str
+    SONAR_ORG_ID: Optional[str] 
     REPOSITORY_URL: str
-    REPOSITORY_BRANCH: str
-    REPOSITORY_COMMIT_SHA: str
-    REPOSITORY_COMMIT_REF: str
-        
-    @field_validator("REPOSITORY_URL", "REPOSITORY_BRANCH", "REPOSITORY_COMMIT_SHA", "REPOSITORY_COMMIT_REF", mode="before")
+    BRANCH: str
+    COMMIT_SHA: str
+    PIPELINE_URL: Optional[str] 
+
+    @field_validator("REPOSITORY_URL", mode="before")
     @classmethod
-    def validate_required_fields(cls, v, field):
-        if not isinstance(v, str) or not v.strip():
-            raise ValueError(f"Unable to retrieve {field.field_name} from Git metadata, Please set the {field.field_name} environment variable")
+    def validate_repository_url(cls, v):
+        if not v:
+            raise ValueError("Unable to retrieve REPOSITORY_URL from Git metadata. Please pass the --repo-url variable.")
+        if not isinstance(v, str) or not v.startswith("http"):
+            raise ValueError("Invalid REPOSITORY_URL. It must be a valid URL starting with 'http'.")
         return v
 
-    @field_validator("CX_BASE_URI")
+    @field_validator("BRANCH", mode="before")
     @classmethod
-    def validate_base_uri(cls, v):
-        if not v.startswith("http"):
-            raise ValueError("CX_BASE_URI must be a valid URL starting with 'http'.")
+    def validate_commit_ref(cls, v):
+        if not isinstance(v, str) or not v.strip():
+            raise ValueError("Unable to retrieve BRANCH from Git metadata. Please pass the --branch variable")
         return v
     
-    @root_validator(pre=True)
-    def validate_exclusive_fields(cls, values):
-        if values.get("CX_SCAN_ID") and (values.get("CX_PROJECT_NAME") or values.get("CX_BRANCH")):
-            raise ValueError("CX_SCAN_ID cannot be used with CX_PROJECT_NAME or CX_BRANCH.")
-        if not values.get("CX_SCAN_ID") and (not values.get("CX_PROJECT_NAME") or not values.get("CX_BRANCH")):
-            raise ValueError("Either CX_SCAN_ID or both CX_PROJECT_NAME and CX_BRANCH must be provided.")
-        return values
-
+    @field_validator("COMMIT_SHA", mode="before")
+    @classmethod
+    def validate_commit_sha(cls, v):
+        if not isinstance(v, str) or not v.strip():
+            raise ValueError("Unable to retrieve COMMIT_SHA from Git metadata. Please pass the --commit-sha variable")
+        return v
 
 class ConfigValidator:
     def __init__(self, scan_type, accuknox_endpoint, accuknox_tenant, accuknox_label, accuknox_token, softfail):
@@ -129,22 +119,6 @@ class ConfigValidator:
                 ACCUKNOX_LABEL=accuknox_label,
                 ACCUKNOX_TOKEN=accuknox_token,
                 SOFT_FAIL=softfail
-            )
-        except ValidationError as e:
-            for error in e.errors():
-                Logger.get_logger().error(f"{error['loc'][0]}: {error['msg']}")
-            exit(1)
-
-    def validate_iac_scan(self, repo_url, repo_branch, input_file, input_directory, input_compact, input_quiet, input_framework):
-        try:
-            self.config = IaCScannerConfig(
-                REPOSITORY_URL=repo_url,
-                REPOSITORY_BRANCH=repo_branch,
-                FILE=input_file,
-                DIRECTORY=input_directory,
-                COMPACT=input_compact,
-                QUIET=input_quiet,
-                FRAMEWORK=input_framework
             )
         except ValidationError as e:
             for error in e.errors():
@@ -166,38 +140,19 @@ class ConfigValidator:
             exit(1)
 
 
-    def validate_secret_scan(self, results, branch, exclude_paths, additional_arguments):
+    def validate_sq_sast_scan(self, sonar_project_key,  sonar_token, sonar_host_url, sonar_org_id, repo_url, branch, commit_sha, pipeline_url):
         try:
-            self.config = SecretScannerConfig(
-                RESULTS=results,
+            self.config = SQSASTScannerConfig(
+                SONAR_PROJECT_KEY=sonar_project_key,
+                SONAR_TOKEN=sonar_token,
+                SONAR_HOST_URL=sonar_host_url,
+                SONAR_ORG_ID = sonar_org_id, 
+                REPOSITORY_URL=repo_url,
                 BRANCH=branch,
-                EXCLUDE_PATHS=exclude_paths,
-                ADDITIONAL_ARGUMENTS=additional_arguments,
+                COMMIT_SHA=commit_sha,
+                PIPELINE_URL=pipeline_url,
             )
         except ValidationError as e:
             for error in e.errors():
                 Logger.get_logger().error(f"{error['loc'][0]}: {error['msg']}")
-            exit(1)
-
-    def validate_cx_scan(self, scan_id, project_name, branch, client_id, client_secret, base_uri, tenant, source_dir, repo_url, repo_branch, repo_commit_sha, repo_commit_ref):
-        try:
-            self.config = CxcannerConfig(
-                CX_SCAN_ID=scan_id,
-                CX_PROJECT_NAME=project_name,
-                CX_BRANCH=branch,
-                CX_CLIENT_ID=client_id,
-                CX_CLIENT_SECRET=client_secret,
-                CX_BASE_URI=base_uri,
-                CX_TENANT=tenant,
-                INPUT_DIRECTORY=source_dir,
-                REPOSITORY_URL=repo_url,
-                REPOSITORY_BRANCH=repo_branch,
-                REPOSITORY_COMMIT_SHA=repo_commit_sha,
-                REPOSITORY_COMMIT_REF=repo_commit_ref,
-            )
-        except ValidationError as e:
-            errors = e.errors()
-            for error in errors:
-                location = " -> ".join(str(loc) for loc in error.get("loc", []))
-                Logger.get_logger().error(f"{location if location else 'Validation Error'}: {error['msg']}")
             exit(1)
